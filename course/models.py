@@ -15,11 +15,27 @@ class Faculty(models.Model):
 
 #model to store the course detail
 class Course(models.Model):
+    COURSE_TYPES = [
+        ('Undergraduate', 'Undergraduate'),
+        ('Postgraduate', 'Postgraduate'),
+        ('Diploma', 'Diploma'),
+        ('Certificate', 'Certificate'),
+    ]
+    
+    INTAKE_CHOICES = [
+        ('Fall', 'Fall'),
+        ('Spring', 'Spring'),
+        ('Summer', 'Summer'),
+    ]
+
     name = models.CharField(max_length=255)
+    course_type = models.CharField(max_length=50, choices=COURSE_TYPES,null=True)
+    intakes = models.CharField(max_length=50, choices=INTAKE_CHOICES,null=True)
+    url = models.URLField(max_length=500,null=True)
     description = models.TextField()
     duration = models.CharField(max_length=50) 
-    faculty = models.ForeignKey(Faculty,on_delete=models.CASCADE,related_name='faculty',default='')  
-    university = models.ForeignKey(University, related_name='university', on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty,on_delete=models.SET_NULL,related_name='faculty',null=True,default='')  
+    university = models.ForeignKey(University, related_name='university', on_delete=models.SET_NULL,null=True)
     fees = models.DecimalField(max_digits=10, decimal_places=2)
     prerequisites = models.TextField()
     credits = models.IntegerField()

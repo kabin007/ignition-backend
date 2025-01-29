@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import make_password
-from .models import Student, EducationBackground, StudyPreferences
+from .models import Student, EducationBackground, StudyPreferences,Contact,BasicInfo,Address
 import jwt
 from datetime import datetime, timedelta, timezone 
 from django.conf import settings
@@ -13,11 +13,11 @@ from rest_framework.exceptions import AuthenticationFailed
 from .serializers import (
     StudentSerializer,
     EducationBackgroundSerializer, StudyPreferencesSerializer,
-    RegisterSerializer, LoginSerializer
+    RegisterSerializer, LoginSerializer,AddressSerializer,ContactSerializer,BasicInfoSerializer
 )
 
 
-# CustomUser ViewSet
+# Student ViewSet
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
@@ -43,10 +43,19 @@ class LoginViewSet(viewsets.ViewSet):
         # Retrieve the authenticated user
         user = serializer.validated_data['user']
 
+        #check if its the user's first login
+        is_first_login=user.is_first_login
+
+        if is_first_login:
+            #set the first login to false
+            user.is_first_login=False
+            user.save()
+
+
         # payload required for jwt generation
         payload = {
             'user_id': user.uuid,
-            'email': user.email,
+            'email': user.contact.email,
             'exp': datetime.now(timezone.utc) + timedelta(seconds=settings.JWT_EXPIRATION_TIME),
             'iat': datetime.now(timezone.utc),
 }
@@ -58,9 +67,9 @@ class LoginViewSet(viewsets.ViewSet):
             'token': token,
             'user': {
                 'id': user.uuid,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'email': user.email,
+                'full_name': user.basic_info.first_name,
+                'email': user.contact.email,
+                'isFirstLogin':user.is_first_login,
             }
         }, status=status.HTTP_200_OK)
 
@@ -78,3 +87,17 @@ class EducationBackgroundViewSet(viewsets.ModelViewSet):
 class StudyPreferencesViewSet(viewsets.ModelViewSet):
     queryset = StudyPreferences.objects.all()
     serializer_class = StudyPreferencesSerializer
+
+
+class BasicInfoViewSet(viewsets.ModelViewSet):
+    queryset = BasicInfo.objects.all()
+    serializer_class = BasicInfoSerializer
+
+
+class ContactViewSet(viewsets.ModelViewSet):
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+
+class AddressViewSet(viewsets.ModelViewSet):
+    queryset = Address.objects.all()
+    serializer_class = AddressSerializer
